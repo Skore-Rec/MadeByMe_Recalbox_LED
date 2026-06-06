@@ -1,0 +1,4 @@
+.cache/
+dist/
+.git/
+.DS_Store

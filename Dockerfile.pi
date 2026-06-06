@@ -1,0 +1,31 @@
+# syntax=docker/dockerfile:1
+
+FROM debian:bookworm AS lib_builder
+
+RUN apt-get update -y \
+	&& apt-get install -y --no-install-recommends build-essential ca-certificates cmake \
+	&& rm -rf /var/lib/apt/lists/*
+
+WORKDIR /build
+ADD https://github.com/jgarff/rpi_ws281x/archive/refs/heads/master.tar.gz /tmp/rpi_ws281x.tar.gz
+RUN tar -xzf /tmp/rpi_ws281x.tar.gz --strip-components=1 \
+	&& cmake -S . -B build -D BUILD_SHARED=OFF -D BUILD_TEST=OFF \
+	&& cmake --build build \
+	&& cmake --install build
+
+FROM golang:1.22-bookworm AS app_builder
+
+COPY --from=lib_builder /usr/local/lib/libws2811.a /usr/local/lib/
+COPY --from=lib_builder /usr/local/include/ws2811 /usr/local/include/ws2811
+
+WORKDIR /src
+ENV CGO_ENABLED=1
+
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY . .
+RUN go build -trimpath -ldflags="-s -w" -o /out/recalbox-ledd .
+
+FROM scratch AS artifact
+COPY --from=app_builder /out/recalbox-ledd /recalbox-ledd

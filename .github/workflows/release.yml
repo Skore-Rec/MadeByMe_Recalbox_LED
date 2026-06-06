@@ -1,0 +1,42 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Raspberry Pi binaries
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          ./build-pi-zero-2w.sh linux/arm64
+          ./build-pi-zero-2w.sh linux/arm/v7
+
+          cp dist/linux-arm64/recalbox-ledd dist/recalbox-ledd-linux-arm64
+          cp dist/linux-armv7/recalbox-ledd dist/recalbox-ledd-linux-armv7
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/recalbox-ledd-linux-arm64
+            dist/recalbox-ledd-linux-armv7
+          generate_release_notes: true
