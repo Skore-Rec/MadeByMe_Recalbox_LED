@@ -12,109 +12,33 @@ Go daemon for Recalbox that listens to EmulationStation MQTT events and drives N
 - Uses a bright default theme when the system is unknown or missing
 - Designed to be launched by a permanent Recalbox user script
 
-## Recalbox layout
-
-Copy files to:
-
-- Binary: `/recalbox/share/userscripts/recalbox-ledd/recalbox-ledd`
-- Wrapper: `/recalbox/share/userscripts/led-listener(permanent).sh`
-
-After Recalbox is installed, the SD card exposes a `SHARE` partition when mounted on another computer. That partition maps to `/recalbox/share` on the running system, so this project should be copied into `SHARE/userscripts/` on the card.
-
-The wrapper script copies the binary to `/tmp/recalbox-ledd`, runs `chmod +x` on that staged copy, and executes it from `/tmp`. This avoids execution failures on filesystems where the original deployed binary cannot be marked executable.
-
 ## Quick start
 
-If you just want to try it, use the prebuilt files from the latest GitHub Release.
+The following instructions assume that Recalbox has already completed its installation on the Raspberry Pi.
+
+> [!IMPORTANT]
+> Writing the image to the SD card with Raspberry Pi Imager is not enough.
+> Recalbox must be booted on the Raspberry Pi at least once so it can finish its first-time installation process.
+> Until that installation is complete, the `SHARE` partition will not be visible when you mount the SD card on another computer.
 
 Download:
 
-- `recalbox-ledd-linux-arm64` for 64-bit Recalbox
-- `recalbox-ledd-linux-armv7` for 32-bit Recalbox
+- `recalbox-ledd-linux-armv7` for 32-bit Recalbox from the latest GitHub Release
 - `led-listener(permanent).sh` from this repository
 
 Then:
 
-1. Rename the downloaded release file to `recalbox-ledd`.
+1. Rename the downloaded release file `recalbox-ledd-linux-armv7` to `recalbox-ledd`.
 2. Shut down the Pi and put the SD card into your computer.
 3. Open the mounted `SHARE` partition.
-4. Create `userscripts/recalbox-ledd/` inside `SHARE`.
+4. Create folder `recalbox-ledd` inside `SHARE/userscripts/`.
 5. Copy `recalbox-ledd` into `SHARE/userscripts/recalbox-ledd/`.
 6. Copy `led-listener(permanent).sh` into `SHARE/userscripts/`.
-7. Put the SD card back into the Pi and boot Recalbox.
+7. If you are using GPIO `18` (the default), also open the mounted `RECALBOX` partition and edit `recalbox-user-config.txt` in a plain text editor.
+8. Add `dtparam=audio=off` at the end of `recalbox-user-config.txt`, then save the file.
+9. Put the SD card back into the Pi and boot Recalbox.
 
 On the running system, those files will appear at `/recalbox/share/userscripts/recalbox-ledd/recalbox-ledd` and `/recalbox/share/userscripts/led-listener(permanent).sh`.
-
-## Example deployment
-
-If you are copying files directly onto the Recalbox SD card:
-
-1. Shut down the Pi and insert the SD card into your computer.
-2. Open the mounted `SHARE` partition.
-3. Create `userscripts/recalbox-ledd/` inside `SHARE` if it does not already exist.
-4. Copy the `recalbox-ledd` binary into `SHARE/userscripts/recalbox-ledd/`.
-5. Copy `led-listener(permanent).sh` into `SHARE/userscripts/`.
-6. Put the SD card back into the Pi and boot Recalbox.
-
-On macOS, the mounted path is usually `/Volumes/SHARE`, so the copy commands look like this:
-
-```bash
-mkdir -p /Volumes/SHARE/userscripts/recalbox-ledd
-cp recalbox-ledd /Volumes/SHARE/userscripts/recalbox-ledd/
-cp led-listener\(permanent\).sh /Volumes/SHARE/userscripts/
-```
-
-From Recalbox's point of view, those files will then appear at `/recalbox/share/userscripts/recalbox-ledd/recalbox-ledd` and `/recalbox/share/userscripts/led-listener(permanent).sh`.
-
-```bash
-mkdir -p /recalbox/share/userscripts/recalbox-ledd
-cp recalbox-ledd /recalbox/share/userscripts/recalbox-ledd/
-cp led-listener\(permanent\).sh /recalbox/share/userscripts/
-chmod +x /recalbox/share/userscripts/led-listener\(permanent\).sh
-```
-
-## Build from source
-
-Only use this section if you want to build the binary yourself.
-
-### Cross compile for Raspberry Pi Zero 2 W
-
-The Pi Zero 2 W can run either a 64-bit ARM64 image or a 32-bit ARMv7 image. Build the binary that matches your target OS:
-
-```bash
-# 64-bit Pi OS/Recalbox
-./build-pi-zero-2w.sh linux/arm64
-
-# 32-bit Pi OS/Recalbox
-./build-pi-zero-2w.sh linux/arm/v7
-```
-
-The output binary is written to:
-
-- `dist/linux-arm64/recalbox-ledd` for 64-bit
-- `dist/linux-armv7/recalbox-ledd` for 32-bit
-
-### Build release files
-
-Pushing a tag that starts with `v` triggers GitHub Actions to build both supported Raspberry Pi binaries and attach them to the matching GitHub Release:
-
-```bash
-git tag v0.1.0
-git push origin v0.1.0
-```
-
-Release assets:
-
-- `recalbox-ledd-linux-arm64`
-- `recalbox-ledd-linux-armv7`
-
-### Native Pi build
-
-Build on a compatible Raspberry Pi / Recalbox-like ARM environment with the required LED library installed:
-
-```bash
-go build -o recalbox-ledd .
-```
 
 ## Hardware wiring
 
@@ -178,3 +102,40 @@ Reference wiring guide: <https://learn.adafruit.com/neopixels-on-raspberry-pi/ra
 - The deployed binary itself does not need the executable bit if the wrapper can copy it into `/tmp` and `chmod +x` the staged copy.
 - Requires the native `rpi_ws281x` library and matching runtime linker support on the target system.
 - Theme colors are normalized for LED visibility, so the ring may appear brighter than the original UI background color values.
+
+## Build from source
+
+## Recalbox layout
+
+- Binary: `/recalbox/share/userscripts/recalbox-ledd/recalbox-ledd`
+- Wrapper: `/recalbox/share/userscripts/led-listener(permanent).sh`
+
+After Recalbox is installed, the SD card exposes a `SHARE` partition when mounted on another computer. That partition maps to `/recalbox/share` on the running system, so this project should be copied into `SHARE/userscripts/` on the card.
+
+The wrapper script copies the binary to `/tmp/recalbox-ledd`, runs `chmod +x` on that staged copy, and executes it from `/tmp`. This avoids execution failures on filesystems where the original deployed binary cannot be marked executable.
+
+### Cross compile for Raspberry Pi Zero 2 W
+
+The Pi Zero 2 W can run either a 64-bit ARM64 image or a 32-bit ARMv7 image. Build the binary that matches your target OS:
+
+```bash
+# 64-bit Pi OS/Recalbox
+./build-pi-zero-2w.sh linux/arm64
+
+# 32-bit Pi OS/Recalbox
+./build-pi-zero-2w.sh linux/arm/v7
+```
+
+The output binary is written to:
+
+- `dist/linux-arm64/recalbox-ledd` for 64-bit
+- `dist/linux-armv7/recalbox-ledd` for 32-bit
+
+### Build release files
+
+Pushing a tag that starts with `v` triggers GitHub Actions to build both supported Raspberry Pi binaries and attach them to the matching GitHub Release:
+
+Release assets:
+
+- `recalbox-ledd-linux-arm64`
+- `recalbox-ledd-linux-armv7`
